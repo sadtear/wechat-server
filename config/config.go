@@ -127,8 +127,14 @@ func Save(newCfg *Config) error {
 		return err
 	}
 
+	// 保存文件后，运行时配置仍需遵守环境变量覆盖规则。
+	// 这样可以避免页面提示已生效，但进程实际由 API_TOKEN / WECHAT_* 等环境变量控制。
+	runtimeCfg := cloneConfig(newCfg)
+	applyEnvOverrides(runtimeCfg)
+	normalizeConfig(runtimeCfg)
+
 	cfgMu.Lock()
-	cfg = newCfg
+	cfg = runtimeCfg
 	cfgMu.Unlock()
 	return nil
 }
@@ -194,6 +200,31 @@ func IsVerificationCodeRequest(content string) bool {
 		}
 	}
 	return false
+}
+
+func cloneConfig(source *Config) *Config {
+	if source == nil {
+		return defaultConfig()
+	}
+	cloned := &Config{
+		Server: source.Server,
+		Code: CodeConfig{
+			Length:        source.Code.Length,
+			ExpireMinutes: source.Code.ExpireMinutes,
+			TriggerWords:  append([]string(nil), source.Code.TriggerWords...),
+		},
+	}
+	if len(source.Accounts) > 0 {
+		cloned.Accounts = make([]WechatAccount, len(source.Accounts))
+		for i, acc := range source.Accounts {
+			cloned.Accounts[i] = acc
+			cloned.Accounts[i].Forwarders = append([]Forwarder(nil), acc.Forwarders...)
+			for j, forwarder := range cloned.Accounts[i].Forwarders {
+				cloned.Accounts[i].Forwarders[j].Events = append([]string(nil), forwarder.Events...)
+			}
+		}
+	}
+	return cloned
 }
 
 func defaultConfig() *Config {

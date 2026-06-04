@@ -160,7 +160,7 @@
       <h2>在线修改 WeChat Server 配置</h2>
       <p class="muted">先用当前 API 密钥加载配置，再修改公众号 AppID、Token、AppSecret、验证码触发词等内容。保存后会立即写入配置文件并更新当前运行时配置。</p>
       <div class="notice">
-        <strong>注意：</strong>如果你用 Docker 挂载了只读 <span class="pill">config.yaml:ro</span>，保存会失败；请改为可写挂载。若设置了 <span class="pill">API_TOKEN</span>、<span class="pill">WECHAT_APPID</span> 或 <span class="pill">WECHAT_TRIGGER_WORDS</span> 环境变量，重启后仍可能覆盖页面保存的配置。
+        <strong>注意：</strong>如果你用 Docker 挂载了只读 <span class="pill">config.yaml:ro</span>，保存会失败；请改为可写挂载。若设置了 <span class="pill">API_TOKEN</span>、<span class="pill">WECHAT_APPID/WECHAT_TOKEN</span> 或 <span class="pill">WECHAT_TRIGGER_WORDS</span> 环境变量，这些环境变量会覆盖页面保存的对应配置；请以保存后返回的配置为准。
       </div>
       <div class="grid two" style="margin-top:14px;">
         <div>
@@ -517,6 +517,15 @@ CREATE TABLE users (
           currentConfig = res.body.data.config;
           document.getElementById('apiToken').value = currentConfig.server?.api_token || '';
           document.getElementById('appId').value = currentConfig.accounts?.[0]?.app_id || '';
+          const account = (currentConfig.accounts && currentConfig.accounts[0]) || {};
+          document.getElementById('cfgApiToken').value = currentConfig.server?.api_token || '';
+          document.getElementById('cfgCodeLength').value = currentConfig.code?.length || 6;
+          document.getElementById('cfgExpireMinutes').value = currentConfig.code?.expire_minutes || 5;
+          document.getElementById('cfgTriggerWords').value = (currentConfig.code?.trigger_words || ['验证码']).join('\n');
+          document.getElementById('cfgAccountName').value = account.name || '';
+          document.getElementById('cfgAccountAppId').value = account.app_id || '';
+          document.getElementById('cfgAccountSecret').value = account.app_secret || '';
+          document.getElementById('cfgAccountToken').value = account.token || '';
         }
         setConfigResult(res, ok);
       } catch (e) { setConfigResult(e.message, false); }

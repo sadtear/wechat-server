@@ -89,13 +89,16 @@ func UpdateConfig(c *gin.Context) {
 func configWarnings() []string {
 	warnings := make([]string, 0)
 	if os.Getenv("API_TOKEN") != "" {
-		warnings = append(warnings, "当前设置了 API_TOKEN 环境变量；重启后它会覆盖 config.yaml 中的 server.api_token")
+		warnings = append(warnings, "当前设置了 API_TOKEN 环境变量；它会覆盖页面保存的 server.api_token")
 	}
-	if os.Getenv("WECHAT_APPID") != "" {
-		warnings = append(warnings, "当前设置了 WECHAT_APPID 等单公众号环境变量；重启后它们会覆盖同 AppID 的公众号配置")
+	if os.Getenv("WECHAT_APPID") != "" || os.Getenv("WECHAT_SECRET") != "" || os.Getenv("WECHAT_TOKEN") != "" || os.Getenv("WECHAT_NAME") != "" {
+		warnings = append(warnings, "当前设置了 WECHAT_APPID/WECHAT_SECRET/WECHAT_TOKEN/WECHAT_NAME 单公众号环境变量；它们会覆盖页面保存的同类公众号配置")
+	}
+	if os.Getenv("CODE_LENGTH") != "" || os.Getenv("CODE_EXPIRE_MINUTES") != "" {
+		warnings = append(warnings, "当前设置了 CODE_LENGTH 或 CODE_EXPIRE_MINUTES 环境变量；它们会覆盖页面保存的验证码长度或有效期")
 	}
 	if os.Getenv("WECHAT_TRIGGER_WORDS") != "" {
-		warnings = append(warnings, "当前设置了 WECHAT_TRIGGER_WORDS 环境变量；重启后它会覆盖 config.yaml 中的 code.trigger_words")
+		warnings = append(warnings, "当前设置了 WECHAT_TRIGGER_WORDS 环境变量；它会覆盖页面保存的 code.trigger_words")
 	}
 	return warnings
 }

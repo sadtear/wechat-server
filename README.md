@@ -138,7 +138,7 @@ Header: Authorization: {api_token}
 
 `POST /api/config` 接收完整配置 JSON，保存到 `CONFIG_PATH` 指向的配置文件（默认 `config.yaml`）并立即更新运行时配置。可通过 `code.trigger_words` 自定义公众号内触发验证码的关键词，例如把默认的 `验证码` 改成 `绑定账号`。
 
-> 如果使用 Docker 挂载配置文件，请确保 `config.yaml` 是可写挂载；如果设置了 `API_TOKEN`、`WECHAT_APPID` 或 `WECHAT_TRIGGER_WORDS` 环境变量，重启后仍会覆盖配置文件中的对应值。
+> 如果使用 Docker 挂载配置文件，请确保 `config.yaml` 是可写挂载；如果设置了 `API_TOKEN`、`WECHAT_APPID`、`WECHAT_TOKEN`、`WECHAT_TRIGGER_WORDS` 等环境变量，它们会覆盖页面保存的对应配置。保存后请查看接口返回的 `warnings` 和 `data.config`，确认实际生效值。
 
 ### 验证用户
 

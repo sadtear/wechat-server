@@ -18,7 +18,7 @@ services:
       # - WECHAT_TOKEN=your-wechat-token
       # - WECHAT_NAME=我的公众号
     volumes:
-      # 多公众号模式，挂载配置文件
+      # 多公众号模式，挂载配置文件；Demo 页在线保存配置需要可写挂载，不能加 :ro
       - ./config.yaml:/app/config.yaml
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
