@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"log"
 
@@ -8,6 +9,11 @@ import (
 	"github.com/seefs001/wechat-server/config"
 	"github.com/seefs001/wechat-server/handler"
 )
+
+// demoFS 内嵌接入测试页，确保 Docker 运行时无需额外挂载静态文件。
+//
+//go:embed demo/demo.html
+var demoFS embed.FS
 
 func main() {
 	// 加载配置
@@ -35,6 +41,16 @@ func main() {
 
 	// 创建路由
 	r := gin.Default()
+
+	// 接入测试 Demo 页面
+	r.GET("/demo", func(c *gin.Context) {
+		data, err := demoFS.ReadFile("demo/demo.html")
+		if err != nil {
+			c.String(500, "Demo 页面加载失败")
+			return
+		}
+		c.Data(200, "text/html; charset=utf-8", data)
+	})
 
 	// 健康检查
 	r.GET("/health", func(c *gin.Context) {

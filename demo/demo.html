@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WeChat Server 接入测试 Demo</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #182033;
+      --muted: #667085;
+      --line: #e4e7ec;
+      --primary: #16a34a;
+      --primary-dark: #15803d;
+      --blue: #2563eb;
+      --danger: #dc2626;
+      --warn-bg: #fff7ed;
+      --warn-border: #fed7aa;
+      --code-bg: #0f172a;
+      --code-text: #e2e8f0;
+      --shadow: 0 18px 55px rgba(15, 23, 42, .08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(22, 163, 74, .13), transparent 34rem),
+        radial-gradient(circle at top right, rgba(37, 99, 235, .10), transparent 30rem),
+        var(--bg);
+      line-height: 1.6;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+    .hero { padding: 46px 0 28px; }
+    .badge {
+      display: inline-flex; gap: 8px; align-items: center;
+      border: 1px solid rgba(22, 163, 74, .22);
+      background: rgba(22, 163, 74, .08);
+      color: var(--primary-dark);
+      padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700;
+    }
+    h1 { margin: 18px 0 12px; font-size: clamp(32px, 5vw, 56px); line-height: 1.08; letter-spacing: -1.5px; }
+    .subtitle { max-width: 780px; color: var(--muted); font-size: 18px; margin: 0; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+    .button {
+      border: 0; border-radius: 12px; padding: 12px 16px; cursor: pointer;
+      font-weight: 800; display: inline-flex; align-items: center; gap: 8px;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    .button:hover { transform: translateY(-1px); text-decoration: none; }
+    .button.primary { background: var(--primary); color: #fff; box-shadow: 0 10px 22px rgba(22, 163, 74, .24); }
+    .button.primary:hover { background: var(--primary-dark); }
+    .button.secondary { background: #fff; color: var(--text); border: 1px solid var(--line); }
+    .button.ghost { background: #eef2ff; color: #3730a3; }
+    .grid { display: grid; gap: 18px; }
+    .two { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: start; }
+    .three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      background: rgba(255,255,255,.92); border: 1px solid rgba(228, 231, 236, .9);
+      border-radius: 22px; box-shadow: var(--shadow); padding: 22px;
+      backdrop-filter: blur(8px);
+    }
+    .card h2 { margin: 0 0 12px; font-size: 24px; letter-spacing: -.3px; }
+    .card h3 { margin: 0 0 10px; font-size: 18px; }
+    .muted { color: var(--muted); }
+    .config-row { display: grid; grid-template-columns: 132px 1fr; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line); }
+    .config-row:last-child { border-bottom: 0; }
+    .pill { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 9px; padding: 3px 7px; word-break: break-all; }
+    label { display: block; font-weight: 800; margin: 12px 0 6px; }
+    input, textarea, select {
+      width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 12px 13px;
+      font: inherit; background: #fff; color: var(--text); outline: none;
+    }
+    input:focus, textarea:focus { border-color: rgba(22, 163, 74, .6); box-shadow: 0 0 0 4px rgba(22, 163, 74, .10); }
+    textarea { min-height: 108px; resize: vertical; }
+    .form-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .result {
+      margin-top: 14px; border-radius: 14px; padding: 14px; min-height: 64px;
+      background: #f8fafc; border: 1px solid var(--line); white-space: pre-wrap; overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px;
+    }
+    .result.ok { border-color: rgba(22, 163, 74, .35); background: #f0fdf4; }
+    .result.err { border-color: rgba(220, 38, 38, .35); background: #fef2f2; }
+    .steps { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+    .steps li { position: relative; padding-left: 46px; }
+    .steps li::before {
+      counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0;
+      width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: #fff;
+      display: grid; place-items: center; font-weight: 900;
+    }
+    .notice { border: 1px solid var(--warn-border); background: var(--warn-bg); border-radius: 16px; padding: 14px 16px; color: #9a3412; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .tab { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 9px 12px; cursor: pointer; font-weight: 800; color: var(--muted); }
+    .tab.active { color: #fff; background: var(--text); border-color: var(--text); }
+    pre { margin: 0; background: var(--code-bg); color: var(--code-text); padding: 16px; border-radius: 16px; overflow: auto; font-size: 13px; line-height: 1.55; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .snippet { display: none; }
+    .snippet.active { display: block; }
+    .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .flow-box { padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: #fff; min-height: 120px; }
+    .flow-box strong { display: block; margin-bottom: 8px; }
+    footer { padding: 32px 0 42px; color: var(--muted); text-align: center; }
+    @media (max-width: 860px) { .two, .three, .flow { grid-template-columns: 1fr; } .config-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="hero">
+      <span class="badge">✅ 已部署 · WeChat Server 接入 Demo</span>
+      <h1>微信公众号验证码登录，复制配置即可接入网站</h1>
+      <p class="subtitle">这个页面同时是测试台和接入文档：可验证服务健康状态、测试验证码换取 OpenID，并提供网站登录/注册/绑定用户的完整后端示例。</p>
+      <div class="hero-actions">
+        <a class="button primary" href="#tester">立即测试接口</a>
+        <a class="button secondary" href="#quickstart">查看接入流程</a>
+        <a class="button ghost" href="#examples">复制后端代码</a>
+      </div>
+    </section>
+
+    <section class="grid two" id="tester">
+      <div class="card">
+        <h2>部署信息</h2>
+        <p class="muted">以下值已按当前部署预填，可直接复制给接入方。</p>
+        <div class="config-row"><strong>服务地址</strong><span class="pill" id="base-url-label">https://wechat.zeroo.vip</span></div>
+        <div class="config-row"><strong>API 密钥</strong><span class="pill">sakura</span></div>
+        <div class="config-row"><strong>公众号 AppID</strong><span class="pill">wx66ebe06eb1729498</span></div>
+        <div class="config-row"><strong>微信回调 URL</strong><span class="pill">https://wechat.zeroo.vip/wechat/wx66ebe06eb1729498</span></div>
+        <div class="notice" style="margin-top:16px;">
+          <strong>安全提醒：</strong>正式网站不要在前端暴露 API 密钥。请由你的网站后端调用 WeChat Server，再把登录结果返回给前端。本页直接调用仅用于部署验收和演示。
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>在线测试台</h2>
+        <label for="baseUrl">WeChat Server 地址</label>
+        <input id="baseUrl" value="https://wechat.zeroo.vip" />
+        <label for="apiToken">API 密钥</label>
+        <input id="apiToken" value="sakura" />
+        <label for="appId">公众号 AppID</label>
+        <input id="appId" value="wx66ebe06eb1729498" />
+        <label for="code">用户收到的验证码</label>
+        <input id="code" placeholder="例如：A1B2C3（用户关注公众号后回复“验证码”获取）" />
+        <div class="form-actions">
+          <button class="button secondary" type="button" onclick="checkHealth()">健康检查</button>
+          <button class="button secondary" type="button" onclick="checkStats()">查看状态</button>
+          <button class="button primary" type="button" onclick="verifyCode()">验证码换 OpenID</button>
+        </div>
+        <div class="result" id="result">等待操作...</div>
+      </div>
+    </section>
+
+    <section class="card" id="quickstart" style="margin-top:18px;">
+      <h2>给接入方的完整测试案例</h2>
+      <div class="flow" aria-label="微信验证码登录流程">
+        <div class="flow-box"><strong>1. 网站展示入口</strong><span class="muted">登录页展示公众号二维码/名称，并提示用户发送“验证码”。</span></div>
+        <div class="flow-box"><strong>2. 用户获取验证码</strong><span class="muted">用户关注公众号后发送“验证码 / 登录 / code / login”。</span></div>
+        <div class="flow-box"><strong>3. 后端验证身份</strong><span class="muted">网站后端携带密钥调用 <code>/api/wechat/user</code>，拿到 OpenID。</span></div>
+        <div class="flow-box"><strong>4. 登录/注册/绑定</strong><span class="muted">用 OpenID 查找已绑定用户；不存在则创建新用户或绑定现有账号。</span></div>
+      </div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:20px 0;" />
+      <ol class="steps">
+        <li><strong>在你的网站后台保存配置：</strong><br />服务地址 <span class="pill">https://wechat.zeroo.vip</span>，密钥 <span class="pill">sakura</span>，AppID <span class="pill">wx66ebe06eb1729498</span>。</li>
+        <li><strong>前端登录页引导用户：</strong><br />展示公众号二维码或公众号名称，提示“关注后发送 <span class="pill">验证码</span>，把收到的验证码填回网站”。</li>
+        <li><strong>网站后端提交验证码：</strong><br />请求 <span class="pill">GET /api/wechat/user?code=用户验证码&amp;app_id=wx66ebe06eb1729498</span>，Header 设置 <span class="pill">Authorization: Bearer sakura</span>。</li>
+        <li><strong>处理返回的 OpenID：</strong><br />如果 OpenID 已绑定网站用户，则直接登录；如果未绑定，可创建新用户，或要求用户登录已有账号后完成绑定。</li>
+      </ol>
+    </section>
+
+    <section class="grid three" style="margin-top:18px;">
+      <div class="card">
+        <h3>接口：验证用户</h3>
+        <pre><code>curl -H "Authorization: Bearer sakura" \
+  "https://wechat.zeroo.vip/api/wechat/user?code=用户验证码&amp;app_id=wx66ebe06eb1729498"</code></pre>
+      </div>
+      <div class="card">
+        <h3>成功响应</h3>
+        <pre><code>{
+  "success": true,
+  "message": "",
+  "data": "微信用户OpenID"
+}</code></pre>
+      </div>
+      <div class="card">
+        <h3>失败响应</h3>
+        <pre><code>{
+  "success": false,
+  "message": "验证码错误或已过期",
+  "data": ""
+}</code></pre>
+      </div>
+    </section>
+
+    <section class="card" id="examples" style="margin-top:18px;">
+      <h2>网站后端接入代码</h2>
+      <p class="muted">选择你的技术栈复制。核心原则：密钥只放后端；OpenID 是微信身份标识，可用于关联网站用户。</p>
+      <div class="tabs">
+        <button class="tab active" data-tab="node" onclick="showTab('node')">Node.js</button>
+        <button class="tab" data-tab="php" onclick="showTab('php')">PHP</button>
+        <button class="tab" data-tab="python" onclick="showTab('python')">Python</button>
+        <button class="tab" data-tab="go" onclick="showTab('go')">Go</button>
+        <button class="tab" data-tab="schema" onclick="showTab('schema')">用户表设计</button>
+      </div>
+
+      <div class="snippet active" id="snippet-node"><pre><code>// npm i express
+import express from 'express';
+
+const app = express();
+const WECHAT_SERVER = 'https://wechat.zeroo.vip';
+const API_TOKEN = process.env.WECHAT_API_TOKEN || 'sakura';
+const APP_ID = 'wx66ebe06eb1729498';
+
+// 示例内存表：正式项目请换成数据库
+const usersByOpenId = new Map();
+let nextUserId = 1;
+
+app.get('/auth/wechat/callback', async (req, res) =&gt; {
+  const code = String(req.query.code || '').trim();
+  if (!code) return res.status(400).json({ error: '验证码不能为空' });
+
+  const url = `${WECHAT_SERVER}/api/wechat/user?code=${encodeURIComponent(code)}&amp;app_id=${APP_ID}`;
+  const resp = await fetch(url, { headers: { Authorization: `Bearer ${API_TOKEN}` } });
+  const json = await resp.json();
+  if (!json.success) return res.status(401).json({ error: json.message });
+
+  const openId = json.data;
+  let user = usersByOpenId.get(openId);
+  if (!user) {
+    user = { id: nextUserId++, openId, nickname: `微信用户${nextUserId}` };
+    usersByOpenId.set(openId, user); // 注册：首次登录自动创建用户
+  }
+
+  // 登录：这里可签发你自己的 session / JWT
+  res.json({ success: true, user });
+});
+
+app.listen(8080);</code></pre></div>
+
+      <div class="snippet" id="snippet-php"><pre><code>&lt;?php
+$wechatServer = 'https://wechat.zeroo.vip';
+$apiToken = getenv('WECHAT_API_TOKEN') ?: 'sakura';
+$appId = 'wx66ebe06eb1729498';
+$code = trim($_GET['code'] ?? '');
+
+if ($code === '') {
+    http_response_code(400);
+    echo json_encode(['error' =&gt; '验证码不能为空']);
+    exit;
+}
+
+$url = $wechatServer . '/api/wechat/user?code=' . urlencode($code) . '&amp;app_id=' . urlencode($appId);
+$ch = curl_init($url);
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER =&gt; true,
+    CURLOPT_HTTPHEADER =&gt; ['Authorization: Bearer ' . $apiToken],
+]);
+$body = curl_exec($ch);
+curl_close($ch);
+
+$result = json_decode($body, true);
+if (!$result || empty($result['success'])) {
+    http_response_code(401);
+    echo json_encode(['error' =&gt; $result['message'] ?? '验证失败']);
+    exit;
+}
+
+$openId = $result['data'];
+// 1. SELECT * FROM users WHERE wechat_openid = $openId
+// 2. 不存在则 INSERT 新用户，或绑定到当前已登录用户
+// 3. 写入 session 完成登录
+echo json_encode(['success' =&gt; true, 'openid' =&gt; $openId]);</code></pre></div>
+
+      <div class="snippet" id="snippet-python"><pre><code># pip install flask requests
+import os
+import requests
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+WECHAT_SERVER = 'https://wechat.zeroo.vip'
+API_TOKEN = os.getenv('WECHAT_API_TOKEN', 'sakura')
+APP_ID = 'wx66ebe06eb1729498'
+
+users_by_openid = {}
+
+@app.get('/auth/wechat/callback')
+def wechat_callback():
+    code = request.args.get('code', '').strip()
+    if not code:
+        return jsonify(error='验证码不能为空'), 400
+
+    resp = requests.get(
+        f'{WECHAT_SERVER}/api/wechat/user',
+        params={'code': code, 'app_id': APP_ID},
+        headers={'Authorization': f'Bearer {API_TOKEN}'},
+        timeout=10,
+    )
+    data = resp.json()
+    if not data.get('success'):
+        return jsonify(error=data.get('message', '验证失败')), 401
+
+    openid = data['data']
+    user = users_by_openid.setdefault(openid, {'openid': openid, 'name': '微信用户'})
+    # 在这里写入 Flask session / JWT
+    return jsonify(success=True, user=user)</code></pre></div>
+
+      <div class="snippet" id="snippet-go"><pre><code>package main
+
+import (
+  "encoding/json"
+  "net/http"
+  "net/url"
+)
+
+type WechatResp struct {
+  Success bool   `json:"success"`
+  Message string `json:"message"`
+  Data    string `json:"data"`
+}
+
+func WechatLogin(w http.ResponseWriter, r *http.Request) {
+  code := r.URL.Query().Get("code")
+  api := "https://wechat.zeroo.vip/api/wechat/user?" + url.Values{
+    "code":   {code},
+    "app_id": {"wx66ebe06eb1729498"},
+  }.Encode()
+
+  req, _ := http.NewRequest(http.MethodGet, api, nil)
+  req.Header.Set("Authorization", "Bearer sakura")
+  resp, err := http.DefaultClient.Do(req)
+  if err != nil { http.Error(w, err.Error(), 500); return }
+  defer resp.Body.Close()
+
+  var out WechatResp
+  json.NewDecoder(resp.Body).Decode(&amp;out)
+  if !out.Success { http.Error(w, out.Message, 401); return }
+
+  openID := out.Data
+  // 用 openID 查询/创建/绑定你的站内用户，然后签发 session
+  json.NewEncoder(w).Encode(map[string]any{"success": true, "openid": openID})
+}</code></pre></div>
+
+      <div class="snippet" id="snippet-schema"><pre><code>-- 推荐用户表关键字段
+CREATE TABLE users (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(64),
+  wechat_openid VARCHAR(128) UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 登录/注册逻辑
+-- 1. 收到 WeChat Server 返回的 openid
+-- 2. SELECT * FROM users WHERE wechat_openid = ?
+-- 3. 查到：给这个 user_id 签发登录态
+-- 4. 查不到：
+--    A) 自动注册：INSERT INTO users(wechat_openid) VALUES (?)
+--    B) 绑定已有账号：要求用户先用账号密码登录，再 UPDATE users SET wechat_openid = ? WHERE id = ?</code></pre></div>
+    </section>
+  </main>
+
+  <footer class="container">WeChat Server Demo · 验证码默认使用一次后失效，请让用户重新发送关键词获取新的验证码。</footer>
+
+  <script>
+    function values() {
+      return {
+        baseUrl: document.getElementById('baseUrl').value.replace(/\/+$/, ''),
+        token: document.getElementById('apiToken').value.trim(),
+        appId: document.getElementById('appId').value.trim(),
+        code: document.getElementById('code').value.trim(),
+      };
+    }
+    function setResult(data, ok) {
+      const el = document.getElementById('result');
+      el.className = 'result ' + (ok ? 'ok' : 'err');
+      el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+    async function requestJson(path, needAuth = true) {
+      const v = values();
+      const headers = needAuth ? { Authorization: `Bearer ${v.token}` } : {};
+      const resp = await fetch(`${v.baseUrl}${path}`, { headers });
+      const text = await resp.text();
+      try { return { status: resp.status, body: JSON.parse(text) }; }
+      catch { return { status: resp.status, body: text }; }
+    }
+    async function checkHealth() {
+      try {
+        const res = await requestJson('/health', false);
+        setResult(res, res.status >= 200 && res.status < 300);
+      } catch (e) { setResult(e.message, false); }
+    }
+    async function checkStats() {
+      try {
+        const res = await requestJson('/api/wechat/stats');
+        setResult(res, res.status >= 200 && res.status < 300 && res.body.success !== false);
+      } catch (e) { setResult(e.message, false); }
+    }
+    async function verifyCode() {
+      const v = values();
+      if (!v.code) return setResult('请先输入用户从公众号收到的验证码。', false);
+      try {
+        const path = `/api/wechat/user?code=${encodeURIComponent(v.code)}&app_id=${encodeURIComponent(v.appId)}`;
+        const res = await requestJson(path);
+        setResult(res, res.status >= 200 && res.status < 300 && res.body.success === true);
+      } catch (e) { setResult(e.message, false); }
+    }
+    function showTab(name) {
+      document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
+      document.querySelectorAll('.snippet').forEach(el => el.classList.toggle('active', el.id === `snippet-${name}`));
+    }
+  </script>
+</body>
+</html>

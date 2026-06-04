@@ -100,6 +100,24 @@ export WECHAT_NAME=我的公众号
 | 公众号A | `https://wechat.example.com/wechat/wx1234567890` |
 | 公众号B | `https://wechat.example.com/wechat/wx0987654321` |
 
+
+### 接入测试 Demo 页面
+
+部署完成后可以直接访问内置 Demo 页面，用作接口测试台和给接入方的示例文档：
+
+```
+https://your-domain.com/demo
+```
+
+Demo 页面支持：
+
+- 预填 WeChat Server 地址、API 密钥、公众号 AppID 等接入参数
+- 在线测试健康检查、服务状态、验证码换取 OpenID
+- 展示网站登录、注册、绑定已有用户的推荐流程
+- 提供 Node.js、PHP、Python、Go 后端接入示例
+
+> 正式业务中请勿把 API 密钥暴露在前端。Demo 页面中的直接调用仅用于部署验收和演示，生产网站应由后端代理调用 `/api/wechat/user`。
+
 ## API 接口
 
 ### 验证用户
