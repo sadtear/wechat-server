@@ -117,6 +117,8 @@ Demo 页面支持：
 - 提供 Node.js、PHP、Python、Go 后端接入示例
 
 > 正式业务中请勿把 API 密钥暴露在前端。Demo 页面中的直接调用仅用于部署验收和演示，生产网站应由后端代理调用 `/api/wechat/user`。
+>
+> 如果 Demo 或 curl 返回 `401` / `未授权访问`，说明请求里的 `Authorization` 密钥与服务端实际加载的 `server.api_token` 不一致，这和公众号 URL、Token、AppID 配置无关。请重点检查运行环境中的 `API_TOKEN` 环境变量；它会覆盖 `config.yaml` 里的 `server.api_token`。
 
 ## API 接口
 

@@ -131,6 +131,9 @@
         <div class="notice" style="margin-top:16px;">
           <strong>安全提醒：</strong>正式网站不要在前端暴露 API 密钥。请由你的网站后端调用 WeChat Server，再把登录结果返回给前端。本页直接调用仅用于部署验收和演示。
         </div>
+        <div class="notice" style="margin-top:12px;">
+          <strong>出现 401 / 未授权访问怎么办？</strong><br />这通常不是公众号配置问题，而是 WeChat Server 的 API 密钥不匹配。请确认当前运行环境里的 <span class="pill">API_TOKEN</span> 或 <span class="pill">config.yaml → server.api_token</span> 与本页填写的密钥一致；注意环境变量 <span class="pill">API_TOKEN</span> 会覆盖配置文件。
+        </div>
       </div>
 
       <div class="card">
@@ -374,7 +377,14 @@ CREATE TABLE users (
     function setResult(data, ok) {
       const el = document.getElementById('result');
       el.className = 'result ' + (ok ? 'ok' : 'err');
-      el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+      let output = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+      if (!ok && data && data.status === 401) {
+        output += '\n\n排查建议：401 / 未授权访问表示 API 密钥不匹配。请检查：';
+        output += '\n1. 本页填写的 API 密钥是否等于服务端 API_TOKEN 或 config.yaml 的 server.api_token；';
+        output += '\n2. 如果 Docker / docker-compose 设置了 API_TOKEN，它会覆盖 config.yaml；';
+        output += '\n3. 修改后需要重启 wechat-server 服务。公众号 AppID、Token、URL 配置正确也无法绕过 API 密钥校验。';
+      }
+      el.textContent = output;
     }
     async function requestJson(path, needAuth = true) {
       const v = values();

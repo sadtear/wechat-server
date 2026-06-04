@@ -9,7 +9,8 @@ services:
       - "3001:3000"
     environment:
       - PORT=3000
-      - API_TOKEN=your-api-token
+      # API_TOKEN 会覆盖 config.yaml 中的 server.api_token；使用配置文件时建议不要在这里重复设置
+      # - API_TOKEN=your-api-token
       - TZ=Asia/Shanghai
       # 单公众号模式（可选）
       # - WECHAT_APPID=wx1234567890
