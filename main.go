@@ -72,6 +72,8 @@ func main() {
 	{
 		api.GET("/wechat/user", handler.AuthMiddleware(), handler.GetUser)
 		api.GET("/wechat/stats", handler.AuthMiddleware(), handler.GetStats)
+		api.GET("/config", handler.AuthMiddleware(), handler.GetConfig)
+		api.POST("/config", handler.AuthMiddleware(), handler.UpdateConfig)
 	}
 
 	// 启动服务

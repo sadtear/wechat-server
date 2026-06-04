@@ -19,7 +19,7 @@ services:
       # - WECHAT_NAME=我的公众号
     volumes:
       # 多公众号模式，挂载配置文件
-      - ./config.yaml:/app/config.yaml:ro
+      - ./config.yaml:/app/config.yaml
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
       interval: 30s

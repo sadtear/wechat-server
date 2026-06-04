@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -37,6 +38,66 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// GetConfig 获取当前运行时配置，供 Demo 页面编辑使用
+func GetConfig(c *gin.Context) {
+	cfg := config.Get()
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data": gin.H{
+			"config":      cfg,
+			"config_path": config.GetConfigPath(),
+			"warnings":    configWarnings(),
+		},
+	})
+}
+
+// UpdateConfig 更新配置文件并立即应用到运行时
+func UpdateConfig(c *gin.Context) {
+	var newCfg config.Config
+	if err := c.ShouldBindJSON(&newCfg); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "配置格式错误: " + err.Error(),
+			"data":    "",
+		})
+		return
+	}
+
+	if err := config.Save(&newCfg); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "保存配置失败: " + err.Error(),
+			"data":    "",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "配置已保存并生效",
+		"data": gin.H{
+			"config":      config.Get(),
+			"config_path": config.GetConfigPath(),
+			"warnings":    configWarnings(),
+		},
+	})
+}
+
+func configWarnings() []string {
+	warnings := make([]string, 0)
+	if os.Getenv("API_TOKEN") != "" {
+		warnings = append(warnings, "当前设置了 API_TOKEN 环境变量；重启后它会覆盖 config.yaml 中的 server.api_token")
+	}
+	if os.Getenv("WECHAT_APPID") != "" {
+		warnings = append(warnings, "当前设置了 WECHAT_APPID 等单公众号环境变量；重启后它们会覆盖同 AppID 的公众号配置")
+	}
+	if os.Getenv("WECHAT_TRIGGER_WORDS") != "" {
+		warnings = append(warnings, "当前设置了 WECHAT_TRIGGER_WORDS 环境变量；重启后它会覆盖 config.yaml 中的 code.trigger_words")
+	}
+	return warnings
 }
 
 // GetUser 验证验证码并返回用户信息（Yi-API 调用）

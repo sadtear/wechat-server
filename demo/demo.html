@@ -155,18 +155,57 @@
       </div>
     </section>
 
+
+    <section class="card" id="config-editor" style="margin-top:18px;">
+      <h2>在线修改 WeChat Server 配置</h2>
+      <p class="muted">先用当前 API 密钥加载配置，再修改公众号 AppID、Token、AppSecret、验证码触发词等内容。保存后会立即写入配置文件并更新当前运行时配置。</p>
+      <div class="notice">
+        <strong>注意：</strong>如果你用 Docker 挂载了只读 <span class="pill">config.yaml:ro</span>，保存会失败；请改为可写挂载。若设置了 <span class="pill">API_TOKEN</span>、<span class="pill">WECHAT_APPID</span> 或 <span class="pill">WECHAT_TRIGGER_WORDS</span> 环境变量，重启后仍可能覆盖页面保存的配置。
+      </div>
+      <div class="grid two" style="margin-top:14px;">
+        <div>
+          <h3>基础与验证码配置</h3>
+          <label for="cfgApiToken">服务端 API 密钥</label>
+          <input id="cfgApiToken" placeholder="保存后新的接口密钥" />
+          <label for="cfgCodeLength">验证码长度</label>
+          <input id="cfgCodeLength" type="number" min="1" max="32" value="6" />
+          <label for="cfgExpireMinutes">验证码有效期（分钟）</label>
+          <input id="cfgExpireMinutes" type="number" min="1" value="5" />
+          <label for="cfgTriggerWords">公众号端验证码触发词</label>
+          <textarea id="cfgTriggerWords" placeholder="每行一个，例如：&#10;验证码&#10;登录&#10;code"></textarea>
+          <p class="muted">用户在公众号里发送任意一个触发词，就会收到登录验证码；例如可把默认“验证码”改成“绑定账号”。</p>
+        </div>
+        <div>
+          <h3>公众号配置（第一个公众号）</h3>
+          <label for="cfgAccountName">公众号名称</label>
+          <input id="cfgAccountName" placeholder="例如：我的公众号" />
+          <label for="cfgAccountAppId">公众号 AppID</label>
+          <input id="cfgAccountAppId" placeholder="wx..." />
+          <label for="cfgAccountSecret">公众号 AppSecret</label>
+          <input id="cfgAccountSecret" placeholder="AppSecret" />
+          <label for="cfgAccountToken">公众号 Token（微信公众平台服务器配置 Token）</label>
+          <input id="cfgAccountToken" placeholder="Token" />
+          <div class="form-actions">
+            <button class="button secondary" type="button" onclick="loadServerConfig()">加载当前配置</button>
+            <button class="button primary" type="button" onclick="saveServerConfig()">保存并立即生效</button>
+          </div>
+          <div class="result" id="configResult">尚未加载配置...</div>
+        </div>
+      </div>
+    </section>
+
     <section class="card" id="quickstart" style="margin-top:18px;">
       <h2>给接入方的完整测试案例</h2>
       <div class="flow" aria-label="微信验证码登录流程">
-        <div class="flow-box"><strong>1. 网站展示入口</strong><span class="muted">登录页展示公众号二维码/名称，并提示用户发送“验证码”。</span></div>
-        <div class="flow-box"><strong>2. 用户获取验证码</strong><span class="muted">用户关注公众号后发送“验证码 / 登录 / code / login”。</span></div>
+        <div class="flow-box"><strong>1. 网站展示入口</strong><span class="muted">登录页展示公众号二维码/名称，并提示用户发送你配置的触发词。</span></div>
+        <div class="flow-box"><strong>2. 用户获取验证码</strong><span class="muted">用户关注公众号后发送配置的触发词，如“验证码 / 登录 / code”。</span></div>
         <div class="flow-box"><strong>3. 后端验证身份</strong><span class="muted">网站后端携带密钥调用 <code>/api/wechat/user</code>，拿到 OpenID。</span></div>
         <div class="flow-box"><strong>4. 登录/注册/绑定</strong><span class="muted">用 OpenID 查找已绑定用户；不存在则创建新用户或绑定现有账号。</span></div>
       </div>
       <hr style="border:0;border-top:1px solid var(--line);margin:20px 0;" />
       <ol class="steps">
         <li><strong>在你的网站后台保存配置：</strong><br />服务地址 <span class="pill">https://wechat.zeroo.vip</span>，密钥 <span class="pill">sakura</span>，AppID <span class="pill">wx66ebe06eb1729498</span>。</li>
-        <li><strong>前端登录页引导用户：</strong><br />展示公众号二维码或公众号名称，提示“关注后发送 <span class="pill">验证码</span>，把收到的验证码填回网站”。</li>
+        <li><strong>前端登录页引导用户：</strong><br />展示公众号二维码或公众号名称，提示“关注后发送配置的触发词，把收到的验证码填回网站”。</li>
         <li><strong>网站后端提交验证码：</strong><br />请求 <span class="pill">GET /api/wechat/user?code=用户验证码&amp;app_id=wx66ebe06eb1729498</span>，Header 设置 <span class="pill">Authorization: Bearer sakura</span>。</li>
         <li><strong>处理返回的 OpenID：</strong><br />如果 OpenID 已绑定网站用户，则直接登录；如果未绑定，可创建新用户，或要求用户登录已有账号后完成绑定。</li>
       </ol>
@@ -363,9 +402,10 @@ CREATE TABLE users (
     </section>
   </main>
 
-  <footer class="container">WeChat Server Demo · 验证码默认使用一次后失效，请让用户重新发送关键词获取新的验证码。</footer>
+  <footer class="container">WeChat Server Demo · 验证码默认使用一次后失效，请让用户重新发送配置的触发词获取新的验证码。</footer>
 
   <script>
+    let currentConfig = null;
     function values() {
       return {
         baseUrl: document.getElementById('baseUrl').value.replace(/\/+$/, ''),
@@ -374,9 +414,7 @@ CREATE TABLE users (
         code: document.getElementById('code').value.trim(),
       };
     }
-    function setResult(data, ok) {
-      const el = document.getElementById('result');
-      el.className = 'result ' + (ok ? 'ok' : 'err');
+    function formatOutput(data, ok) {
       let output = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
       if (!ok && data && data.status === 401) {
         output += '\n\n排查建议：401 / 未授权访问表示 API 密钥不匹配。请检查：';
@@ -384,12 +422,23 @@ CREATE TABLE users (
         output += '\n2. 如果 Docker / docker-compose 设置了 API_TOKEN，它会覆盖 config.yaml；';
         output += '\n3. 修改后需要重启 wechat-server 服务。公众号 AppID、Token、URL 配置正确也无法绕过 API 密钥校验。';
       }
-      el.textContent = output;
+      return output;
     }
-    async function requestJson(path, needAuth = true) {
+    function setResult(data, ok) {
+      const el = document.getElementById('result');
+      el.className = 'result ' + (ok ? 'ok' : 'err');
+      el.textContent = formatOutput(data, ok);
+    }
+    function setConfigResult(data, ok) {
+      const el = document.getElementById('configResult');
+      el.className = 'result ' + (ok ? 'ok' : 'err');
+      el.textContent = formatOutput(data, ok);
+    }
+    async function requestJson(path, needAuth = true, options = {}) {
       const v = values();
-      const headers = needAuth ? { Authorization: `Bearer ${v.token}` } : {};
-      const resp = await fetch(`${v.baseUrl}${path}`, { headers });
+      const headers = { ...(options.headers || {}) };
+      if (needAuth) headers.Authorization = `Bearer ${v.token}`;
+      const resp = await fetch(`${v.baseUrl}${path}`, { ...options, headers });
       const text = await resp.text();
       try { return { status: resp.status, body: JSON.parse(text) }; }
       catch { return { status: resp.status, body: text }; }
@@ -415,10 +464,68 @@ CREATE TABLE users (
         setResult(res, res.status >= 200 && res.status < 300 && res.body.success === true);
       } catch (e) { setResult(e.message, false); }
     }
+
+    async function loadServerConfig() {
+      try {
+        const res = await requestJson('/api/config');
+        const ok = res.status >= 200 && res.status < 300 && res.body.success !== false;
+        if (ok) {
+          currentConfig = res.body.data.config;
+          const account = (currentConfig.accounts && currentConfig.accounts[0]) || {};
+          document.getElementById('cfgApiToken').value = currentConfig.server?.api_token || '';
+          document.getElementById('cfgCodeLength').value = currentConfig.code?.length || 6;
+          document.getElementById('cfgExpireMinutes').value = currentConfig.code?.expire_minutes || 5;
+          document.getElementById('cfgTriggerWords').value = (currentConfig.code?.trigger_words || ['验证码']).join('\n');
+          document.getElementById('cfgAccountName').value = account.name || '';
+          document.getElementById('cfgAccountAppId').value = account.app_id || '';
+          document.getElementById('cfgAccountSecret').value = account.app_secret || '';
+          document.getElementById('cfgAccountToken').value = account.token || '';
+        }
+        setConfigResult(res, ok);
+      } catch (e) { setConfigResult(e.message, false); }
+    }
+    async function saveServerConfig() {
+      try {
+        if (!currentConfig) {
+          currentConfig = {
+            server: { port: 3000, api_token: '' },
+            accounts: [{}],
+            code: { length: 6, expire_minutes: 5, trigger_words: ['验证码'] },
+          };
+        }
+        currentConfig.server = currentConfig.server || {};
+        currentConfig.code = currentConfig.code || {};
+        currentConfig.accounts = currentConfig.accounts && currentConfig.accounts.length ? currentConfig.accounts : [{}];
+        currentConfig.server.api_token = document.getElementById('cfgApiToken').value.trim();
+        currentConfig.code.length = Number(document.getElementById('cfgCodeLength').value || 6);
+        currentConfig.code.expire_minutes = Number(document.getElementById('cfgExpireMinutes').value || 5);
+        currentConfig.code.trigger_words = document.getElementById('cfgTriggerWords').value.split(/[,，;；\n]/).map(v => v.trim()).filter(Boolean);
+        currentConfig.accounts[0] = {
+          ...(currentConfig.accounts[0] || {}),
+          name: document.getElementById('cfgAccountName').value.trim(),
+          app_id: document.getElementById('cfgAccountAppId').value.trim(),
+          app_secret: document.getElementById('cfgAccountSecret').value.trim(),
+          token: document.getElementById('cfgAccountToken').value.trim(),
+        };
+        const res = await requestJson('/api/config', true, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentConfig),
+        });
+        const ok = res.status >= 200 && res.status < 300 && res.body.success === true;
+        if (ok) {
+          currentConfig = res.body.data.config;
+          document.getElementById('apiToken').value = currentConfig.server?.api_token || '';
+          document.getElementById('appId').value = currentConfig.accounts?.[0]?.app_id || '';
+        }
+        setConfigResult(res, ok);
+      } catch (e) { setConfigResult(e.message, false); }
+    }
     function showTab(name) {
       document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
       document.querySelectorAll('.snippet').forEach(el => el.classList.toggle('active', el.id === `snippet-${name}`));
     }
   </script>
+  <script>loadServerConfig().catch(() => {});</script>
 </body>
 </html>

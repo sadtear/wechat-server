@@ -66,6 +66,10 @@ accounts:
 code:
   length: 6
   expire_minutes: 5
+  trigger_words:
+    - "验证码"
+    - "登录"
+    - "code"
 ```
 
 ### 单公众号模式
@@ -113,6 +117,7 @@ Demo 页面支持：
 
 - 预填 WeChat Server 地址、API 密钥、公众号 AppID 等接入参数
 - 在线测试健康检查、服务状态、验证码换取 OpenID
+- 在线修改 WeChat Server 配置（API 密钥、公众号 AppID/AppSecret/Token、验证码长度/有效期、公众号触发词等）
 - 展示网站登录、注册、绑定已有用户的推荐流程
 - 提供 Node.js、PHP、Python、Go 后端接入示例
 
@@ -121,6 +126,19 @@ Demo 页面支持：
 > 如果 Demo 或 curl 返回 `401` / `未授权访问`，说明请求里的 `Authorization` 密钥与服务端实际加载的 `server.api_token` 不一致，这和公众号 URL、Token、AppID 配置无关。请重点检查运行环境中的 `API_TOKEN` 环境变量；它会覆盖 `config.yaml` 里的 `server.api_token`。
 
 ## API 接口
+
+
+### 配置管理
+
+```
+GET /api/config
+POST /api/config
+Header: Authorization: {api_token}
+```
+
+`POST /api/config` 接收完整配置 JSON，保存到 `CONFIG_PATH` 指向的配置文件（默认 `config.yaml`）并立即更新运行时配置。可通过 `code.trigger_words` 自定义公众号内触发验证码的关键词，例如把默认的 `验证码` 改成 `绑定账号`。
+
+> 如果使用 Docker 挂载配置文件，请确保 `config.yaml` 是可写挂载；如果设置了 `API_TOKEN`、`WECHAT_APPID` 或 `WECHAT_TRIGGER_WORDS` 环境变量，重启后仍会覆盖配置文件中的对应值。
 
 ### 验证用户
 
@@ -184,8 +202,8 @@ GET /health
 2. **前端展示公众号二维码**
    - 引导用户扫码关注公众号
 
-3. **用户发送消息获取验证码**
-   - 用户向公众号发送任意消息
+3. **用户发送触发词获取验证码**
+   - 用户向公众号发送 `code.trigger_words` 中配置的任意触发词
    - 公众号自动回复 6 位验证码（有效期 5 分钟）
 
 4. **验证用户身份**
@@ -225,6 +243,7 @@ GET /health
 | `WECHAT_NAME` | 公众号名称 | - |
 | `CODE_LENGTH` | 验证码长度 | 6 |
 | `CODE_EXPIRE_MINUTES` | 验证码有效期（分钟） | 5 |
+| `WECHAT_TRIGGER_WORDS` | 公众号内触发验证码回复的关键词，支持逗号/分号/换行分隔 | 验证码、登录、code、login、yanzhengma、获取验证码、发送验证码 |
 
 ## 许可证
 
