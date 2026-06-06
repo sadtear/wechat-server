@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/seefs001/wechat-server/config"
@@ -125,8 +124,7 @@ func handleMessage(c *gin.Context, account *config.WechatAccount) {
 
 	case msg.IsTextMessage():
 		// 文本消息，检查是否是请求验证码
-		content := strings.TrimSpace(strings.ToLower(msg.Content))
-		if isVerificationCodeRequest(content) {
+		if config.IsVerificationCodeRequest(msg.Content) {
 			// 用户请求验证码
 			openID := msg.GetOpenID()
 			code := store.GetStore().GenerateCode(openID, account.AppID)
@@ -154,25 +152,4 @@ func handleMessage(c *gin.Context, account *config.WechatAccount) {
 	}
 
 	c.Data(http.StatusOK, "application/xml", replyXML)
-}
-
-// isVerificationCodeRequest 判断用户消息是否是请求验证码
-// 支持的关键词: 验证码、登录、code、login、yanzhengma
-func isVerificationCodeRequest(content string) bool {
-	keywords := []string{
-		"验证码",
-		"登录",
-		"code",
-		"login",
-		"yanzhengma",
-		"获取验证码",
-		"发送验证码",
-	}
-
-	for _, keyword := range keywords {
-		if strings.Contains(content, keyword) {
-			return true
-		}
-	}
-	return false
 }

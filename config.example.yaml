@@ -19,3 +19,9 @@ accounts:
 code:
   length: 6           # 验证码长度
   expire_minutes: 5   # 有效期（分钟）
+  # 公众号内触发验证码回复的关键词，用户发送任意一个即可获取验证码
+  trigger_words:
+    - "验证码"
+    - "登录"
+    - "code"
+    - "login"
