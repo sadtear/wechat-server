@@ -337,7 +337,7 @@ func WechatLogin(w http.ResponseWriter, r *http.Request) {
           <div class="grid two">
             <div>
               <h2>部署信息</h2>
-              <p class="muted">这些值会用于测试台，也可作为接入配置参考；服务地址默认取当前 Demo 页域名，不再写死某个线上地址。</p>
+              <p class="muted">这些值会用于测试台，也可作为接入配置参考；服务地址默认优先取服务端 DEMO_BASE_URL 环境变量，其次取当前 Demo 页域名，不再写死某个线上地址。</p>
               <div class="config-row"><strong>服务地址</strong><span class="pill" id="displayBaseUrl">自动识别当前域名</span></div>
               <div class="config-row"><strong>公众号 AppID</strong><span class="pill" id="displayAppId">wx66ebe06eb1729498</span></div>
               <div class="config-row"><strong>微信回调 URL</strong><span class="pill" id="displayCallbackUrl">解锁后按当前地址与 AppID 生成</span></div>
@@ -350,7 +350,7 @@ func WechatLogin(w http.ResponseWriter, r *http.Request) {
                 <button class="tab" data-tool="config" onclick="showTool('config')">修改配置</button>
               </div>
               <label for="baseUrl">WeChat Server 地址</label>
-              <input id="baseUrl" value="" placeholder="默认自动使用当前页面域名" oninput="syncDeploymentDisplay()" />
+              <input id="baseUrl" value="" placeholder="默认使用 DEMO_BASE_URL 或当前页面域名" oninput="syncDeploymentDisplay()" />
               <label for="apiToken">当前 API 密钥</label>
               <input id="apiToken" type="password" value="" placeholder="解锁后自动填入" />
             </div>
@@ -420,16 +420,25 @@ func WechatLogin(w http.ResponseWriter, r *http.Request) {
   <footer class="container">WeChat Server Demo · 公开文档给接入方，高级工具箱仅管理员使用。</footer>
 
   <script>
+    window.__WECHAT_DEMO_BASE_URL__ = __WECHAT_DEMO_BASE_URL_JSON__;
     let currentConfig = null;
     let toolsUnlocked = false;
+
+    function configuredBaseUrl() {
+      return String(window.__WECHAT_DEMO_BASE_URL__ || '').trim().replace(/\/+$/, '');
+    }
 
     function currentOrigin() {
       if (window.location.origin && window.location.origin !== 'null') return window.location.origin;
       return '';
     }
 
+    function defaultBaseUrl() {
+      return configuredBaseUrl() || currentOrigin();
+    }
+
     function effectiveBaseUrl() {
-      return (document.getElementById('baseUrl').value.trim() || currentOrigin()).replace(/\/+$/, '');
+      return (document.getElementById('baseUrl').value.trim() || defaultBaseUrl()).replace(/\/+$/, '');
     }
 
     function values() {
@@ -621,7 +630,7 @@ func WechatLogin(w http.ResponseWriter, r *http.Request) {
 
     function initDemoRuntimeDefaults() {
       const baseUrlInput = document.getElementById('baseUrl');
-      if (!baseUrlInput.value && currentOrigin()) baseUrlInput.value = currentOrigin();
+      if (!baseUrlInput.value && defaultBaseUrl()) baseUrlInput.value = defaultBaseUrl();
       syncDeploymentDisplay();
       refreshHeaderStatus();
     }

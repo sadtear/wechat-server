@@ -12,6 +12,8 @@ services:
       # API_TOKEN 会覆盖 config.yaml 中的 server.api_token；使用配置文件时建议不要在这里重复设置
       # - API_TOKEN=your-api-token
       - TZ=Asia/Shanghai
+      # Demo 页默认会使用浏览器当前访问域名；如反向代理场景需要固定外部域名，可设置 DEMO_BASE_URL
+      # - DEMO_BASE_URL=https://wechat.example.com
       # 单公众号模式（可选）
       # - WECHAT_APPID=wx1234567890
       # - WECHAT_SECRET=your-app-secret

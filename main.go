@@ -2,8 +2,11 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/seefs001/wechat-server/config"
@@ -49,7 +52,13 @@ func main() {
 			c.String(500, "Demo 页面加载失败")
 			return
 		}
-		c.Data(200, "text/html; charset=utf-8", data)
+		demoBaseURL, err := json.Marshal(strings.TrimRight(os.Getenv("DEMO_BASE_URL"), "/"))
+		if err != nil {
+			c.String(500, "Demo 页面配置加载失败")
+			return
+		}
+		body := strings.ReplaceAll(string(data), "__WECHAT_DEMO_BASE_URL_JSON__", string(demoBaseURL))
+		c.Data(200, "text/html; charset=utf-8", []byte(body))
 	})
 
 	// 健康检查

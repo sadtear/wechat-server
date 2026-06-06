@@ -115,13 +115,13 @@ https://your-domain.com/demo
 
 Demo 页面支持：
 
-- 自动使用当前 Demo 页所在域名作为 WeChat Server 地址（例如本地部署会请求 `http://localhost:端口`，不会写死线上域名），也可在高级工具箱中手动改为其它地址
+- Demo 页的 WeChat Server 地址默认优先使用 `DEMO_BASE_URL` 环境变量；未设置时自动使用当前 Demo 页所在域名（例如本地部署会请求 `http://localhost:端口`），也可在高级工具箱中手动改为其它地址
 - 在线测试健康检查、服务状态、验证码换取 OpenID
 - 在线修改 WeChat Server 配置（API 密钥、公众号 AppID/AppSecret/Token、验证码长度/有效期、公众号触发词等）
 - 展示网站登录、注册、绑定已有用户的推荐流程
 - 提供 Node.js、PHP、Python、Go 后端接入示例
 
-> 正式业务中请勿把 API 密钥暴露在前端。Demo 页面中的直接调用仅用于部署验收和演示，生产网站应由后端代理调用 `/api/wechat/user`。Demo 页测试台默认以当前页面 `window.location.origin` 作为请求地址；如果你把“高级工具箱 → WeChat Server 地址”手动改成其它域名，才会跨域请求该地址。
+> 正式业务中请勿把 API 密钥暴露在前端。Demo 页面中的直接调用仅用于部署验收和演示，生产网站应由后端代理调用 `/api/wechat/user`。Demo 页测试台默认优先使用服务端注入的 `DEMO_BASE_URL`；未设置时再使用当前页面 `window.location.origin`。如果你把“高级工具箱 → WeChat Server 地址”手动改成其它域名，才会跨域请求该地址。
 >
 > 如果 Demo 或 curl 返回 `401` / `未授权访问`，说明请求里的 `Authorization` 密钥与服务端实际加载的 `server.api_token` 不一致，这和公众号 URL、Token、AppID 配置无关。请重点检查运行环境中的 `API_TOKEN` 环境变量；它会覆盖 `config.yaml` 里的 `server.api_token`。
 
@@ -237,6 +237,7 @@ GET /health
 | `PORT` | 服务端口 | 3000 |
 | `API_TOKEN` | API 访问凭证 | - |
 | `CONFIG_PATH` | 配置文件路径 | config.yaml |
+| `DEMO_BASE_URL` | Demo 页默认请求的 WeChat Server 外部访问地址，适合反向代理/CDN 场景，例如 `https://wechat.example.com`；未设置时使用当前页面域名 | - |
 | `WECHAT_APPID` | 公众号 AppID（单公众号模式） | - |
 | `WECHAT_SECRET` | 公众号 AppSecret | - |
 | `WECHAT_TOKEN` | 公众号 Token | - |
