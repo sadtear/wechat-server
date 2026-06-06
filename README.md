@@ -124,6 +124,8 @@ Demo 页面支持：
 > 正式业务中请勿把 API 密钥暴露在前端。Demo 页面中的直接调用仅用于部署验收和演示，生产网站应由后端代理调用 `/api/wechat/user`。Demo 页测试台默认优先使用服务端注入的 `DEMO_BASE_URL`；未设置时再使用当前页面 `window.location.origin`。如果你把“高级工具箱 → WeChat Server 地址”手动改成其它域名，才会跨域请求该地址。
 >
 > 如果 Demo 或 curl 返回 `401` / `未授权访问`，说明请求里的 `Authorization` 密钥与服务端实际加载的 `server.api_token` 不一致，这和公众号 URL、Token、AppID 配置无关。请重点检查运行环境中的 `API_TOKEN` 环境变量；它会覆盖 `config.yaml` 里的 `server.api_token`。
+>
+> 如果未设置 `DEMO_BASE_URL` 却仍请求旧域名，请先确认访问到的是新镜像/新容器，并强制刷新 `/demo`；当前版本会对 `/demo` 返回 `Cache-Control: no-store`，且页面加载时会用 `DEMO_BASE_URL` 或当前页面域名覆盖浏览器可能恢复的旧表单值。
 
 ## API 接口
 

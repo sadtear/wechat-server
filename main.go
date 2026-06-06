@@ -47,6 +47,9 @@ func main() {
 
 	// 接入测试 Demo 页面
 	r.GET("/demo", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+		c.Header("Pragma", "no-cache")
+		c.Header("Expires", "0")
 		data, err := demoFS.ReadFile("demo/demo.html")
 		if err != nil {
 			c.String(500, "Demo 页面加载失败")
