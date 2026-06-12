@@ -1,13 +1,22 @@
 package main
 
 import (
+	"embed"
+	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/seefs001/wechat-server/config"
 	"github.com/seefs001/wechat-server/handler"
 )
+
+// demoFS 内嵌接入测试页，确保 Docker 运行时无需额外挂载静态文件。
+//
+//go:embed demo/demo.html
+var demoFS embed.FS
 
 func main() {
 	// 加载配置
@@ -36,6 +45,25 @@ func main() {
 	// 创建路由
 	r := gin.Default()
 
+	// 接入测试 Demo 页面
+	r.GET("/demo", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+		c.Header("Pragma", "no-cache")
+		c.Header("Expires", "0")
+		data, err := demoFS.ReadFile("demo/demo.html")
+		if err != nil {
+			c.String(500, "Demo 页面加载失败")
+			return
+		}
+		demoBaseURL, err := json.Marshal(strings.TrimRight(os.Getenv("DEMO_BASE_URL"), "/"))
+		if err != nil {
+			c.String(500, "Demo 页面配置加载失败")
+			return
+		}
+		body := strings.ReplaceAll(string(data), "__WECHAT_DEMO_BASE_URL_JSON__", string(demoBaseURL))
+		c.Data(200, "text/html; charset=utf-8", []byte(body))
+	})
+
 	// 健康检查
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -56,6 +84,8 @@ func main() {
 	{
 		api.GET("/wechat/user", handler.AuthMiddleware(), handler.GetUser)
 		api.GET("/wechat/stats", handler.AuthMiddleware(), handler.GetStats)
+		api.GET("/config", handler.AuthMiddleware(), handler.GetConfig)
+		api.POST("/config", handler.AuthMiddleware(), handler.UpdateConfig)
 	}
 
 	// 启动服务
