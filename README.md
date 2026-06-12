@@ -66,6 +66,10 @@ accounts:
 code:
   length: 6
   expire_minutes: 5
+  trigger_words:
+    - "验证码"
+    - "登录"
+    - "code"
 ```
 
 ### 单公众号模式
@@ -100,7 +104,43 @@ export WECHAT_NAME=我的公众号
 | 公众号A | `https://wechat.example.com/wechat/wx1234567890` |
 | 公众号B | `https://wechat.example.com/wechat/wx0987654321` |
 
+
+### 接入测试 Demo 页面
+
+部署完成后可以直接访问内置 Demo 页面，用作接口测试台和给接入方的示例文档：
+
+```
+https://your-domain.com/demo
+```
+
+Demo 页面支持：
+
+- Demo 页的 WeChat Server 地址默认优先使用 `DEMO_BASE_URL` 环境变量；未设置时自动使用当前 Demo 页所在域名（例如本地部署会请求 `http://localhost:端口`），也可在高级工具箱中手动改为其它地址
+- 在线测试健康检查、服务状态、验证码换取 OpenID
+- 在线修改 WeChat Server 配置（API 密钥、公众号 AppID/AppSecret/Token、验证码长度/有效期、公众号触发词、关注后自动回复等）
+- 展示网站登录、注册、绑定已有用户的推荐流程
+- 提供 Node.js、PHP、Python、Go 后端接入示例
+
+> 正式业务中请勿把 API 密钥暴露在前端。Demo 页面中的直接调用仅用于部署验收和演示，生产网站应由后端代理调用 `/api/wechat/user`。Demo 页测试台默认优先使用服务端注入的 `DEMO_BASE_URL`；未设置时再使用当前页面 `window.location.origin`。如果你把“高级工具箱 → WeChat Server 地址”手动改成其它域名，才会跨域请求该地址。
+>
+> 如果 Demo 或 curl 返回 `401` / `未授权访问`，说明请求里的 `Authorization` 密钥与服务端实际加载的 `server.api_token` 不一致，这和公众号 URL、Token、AppID 配置无关。请重点检查运行环境中的 `API_TOKEN` 环境变量；它会覆盖 `config.yaml` 里的 `server.api_token`。
+>
+> 如果未设置 `DEMO_BASE_URL` 却仍请求旧域名，请先确认访问到的是新镜像/新容器，并强制刷新 `/demo`；当前版本会对 `/demo` 返回 `Cache-Control: no-store`，且页面加载时会用 `DEMO_BASE_URL` 或当前页面域名覆盖浏览器可能恢复的旧表单值。
+
 ## API 接口
+
+
+### 配置管理
+
+```
+GET /api/config
+POST /api/config
+Header: Authorization: {api_token}
+```
+
+`POST /api/config` 接收完整配置 JSON，保存到 `CONFIG_PATH` 指向的配置文件（默认 `config.yaml`）并立即更新运行时配置。可通过 `code.trigger_words` 自定义公众号内触发验证码的关键词，例如把默认的 `验证码` 改成 `绑定账号`；可通过 `messages.subscribe_reply` 自定义关注公众号后的自动欢迎回复。
+
+> 如果使用 Docker 挂载配置文件，请确保 `config.yaml` 是可写挂载；如果设置了 `API_TOKEN`、`WECHAT_APPID`、`WECHAT_TOKEN`、`WECHAT_TRIGGER_WORDS`、`WECHAT_SUBSCRIBE_REPLY` 等环境变量，它们会覆盖页面保存的对应配置。保存后请查看接口返回的 `warnings` 和 `data.config`，确认实际生效值。
 
 ### 验证用户
 
@@ -164,8 +204,8 @@ GET /health
 2. **前端展示公众号二维码**
    - 引导用户扫码关注公众号
 
-3. **用户发送消息获取验证码**
-   - 用户向公众号发送任意消息
+3. **用户发送触发词获取验证码**
+   - 用户向公众号发送 `code.trigger_words` 中配置的任意触发词
    - 公众号自动回复 6 位验证码（有效期 5 分钟）
 
 4. **验证用户身份**
@@ -199,12 +239,15 @@ GET /health
 | `PORT` | 服务端口 | 3000 |
 | `API_TOKEN` | API 访问凭证 | - |
 | `CONFIG_PATH` | 配置文件路径 | config.yaml |
+| `DEMO_BASE_URL` | Demo 页默认请求的 WeChat Server 外部访问地址，适合反向代理/CDN 场景，例如 `https://wechat.example.com`；未设置时使用当前页面域名 | - |
 | `WECHAT_APPID` | 公众号 AppID（单公众号模式） | - |
 | `WECHAT_SECRET` | 公众号 AppSecret | - |
 | `WECHAT_TOKEN` | 公众号 Token | - |
 | `WECHAT_NAME` | 公众号名称 | - |
 | `CODE_LENGTH` | 验证码长度 | 6 |
 | `CODE_EXPIRE_MINUTES` | 验证码有效期（分钟） | 5 |
+| `WECHAT_TRIGGER_WORDS` | 公众号内触发验证码回复的关键词，支持逗号/分号/换行分隔 | 验证码、登录、code、login、yanzhengma、获取验证码、发送验证码 |
+| `WECHAT_SUBSCRIBE_REPLY` | 用户关注公众号后的自动回复内容，支持实际换行或 `\n` 转义换行；会覆盖 `messages.subscribe_reply` | AI80 欢迎语 |
 
 ## 许可证
 

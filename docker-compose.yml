@@ -9,16 +9,21 @@ services:
       - "3001:3000"
     environment:
       - PORT=3000
-      - API_TOKEN=your-api-token
+      # API_TOKEN 会覆盖 config.yaml 中的 server.api_token；使用配置文件时建议不要在这里重复设置
+      # - API_TOKEN=your-api-token
       - TZ=Asia/Shanghai
+      # Demo 页默认会使用浏览器当前访问域名；如反向代理场景需要固定外部域名，可设置 DEMO_BASE_URL
+      # - DEMO_BASE_URL=https://wechat.example.com
       # 单公众号模式（可选）
       # - WECHAT_APPID=wx1234567890
       # - WECHAT_SECRET=your-app-secret
       # - WECHAT_TOKEN=your-wechat-token
       # - WECHAT_NAME=我的公众号
+      # 关注后自动回复（可选，会覆盖 config.yaml 中的 messages.subscribe_reply）
+      # - WECHAT_SUBSCRIBE_REPLY=欢迎关注！\n\n回复【验证码】获取登录验证码
     volumes:
-      # 多公众号模式，挂载配置文件
-      - ./config.yaml:/app/config.yaml:ro
+      # 多公众号模式，挂载配置文件；Demo 页在线保存配置需要可写挂载，不能加 :ro
+      - ./config.yaml:/app/config.yaml
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
       interval: 30s

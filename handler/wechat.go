@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/seefs001/wechat-server/config"
@@ -109,14 +108,7 @@ func handleMessage(c *gin.Context, account *config.WechatAccount) {
 	switch {
 	case msg.IsSubscribeEvent():
 		// 关注事件
-		replyContent = "欢迎关注 AI80！\n\n" +
-			"我们提供 AI API 聚合平台，一个 Key 用遍 Claude、GPT、Gemini 等主流模型。\n\n" +
-			"<a href=\"https://code.ai80.vip\">Code80 — AI API 平台（主站）</a>\n" +
-			"<a href=\"https://chat.ai80.vip\">AI 对话助手（在线体验）</a>\n\n" +
-			"回复【教程】获取接入指南\n" +
-			"回复【客服】联系人工客服\n\n" +
-			"平台支持按量计费、团队共享、API Key 自助管理。\n" +
-			"推广合作详情回复【合作】"
+		replyContent = config.Get().Messages.SubscribeReply
 
 	case msg.IsUnsubscribeEvent():
 		// 取消关注事件，不回复
@@ -125,8 +117,7 @@ func handleMessage(c *gin.Context, account *config.WechatAccount) {
 
 	case msg.IsTextMessage():
 		// 文本消息，检查是否是请求验证码
-		content := strings.TrimSpace(strings.ToLower(msg.Content))
-		if isVerificationCodeRequest(content) {
+		if config.IsVerificationCodeRequest(msg.Content) {
 			// 用户请求验证码
 			openID := msg.GetOpenID()
 			code := store.GetStore().GenerateCode(openID, account.AppID)
@@ -154,25 +145,4 @@ func handleMessage(c *gin.Context, account *config.WechatAccount) {
 	}
 
 	c.Data(http.StatusOK, "application/xml", replyXML)
-}
-
-// isVerificationCodeRequest 判断用户消息是否是请求验证码
-// 支持的关键词: 验证码、登录、code、login、yanzhengma
-func isVerificationCodeRequest(content string) bool {
-	keywords := []string{
-		"验证码",
-		"登录",
-		"code",
-		"login",
-		"yanzhengma",
-		"获取验证码",
-		"发送验证码",
-	}
-
-	for _, keyword := range keywords {
-		if strings.Contains(content, keyword) {
-			return true
-		}
-	}
-	return false
 }
